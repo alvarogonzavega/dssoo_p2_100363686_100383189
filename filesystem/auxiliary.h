@@ -10,3 +10,9 @@
  *
  */
 
+int syncFS(void);
+int ialloc(void);
+int balloc(void);
+int namei(char *fileName);
+int ifree(int i);
+int bfree(int i);

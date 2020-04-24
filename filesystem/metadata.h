@@ -41,10 +41,10 @@ typedef struct{
 
 typedef struct{
 
-  unsigned int type;
   unsigned int size;
   unsigned int block;
-  unsigned int state;
+  int state=0;
+  int pos=0;
   char name[MAX_NAME_LENGTH];
 
 }inode;
