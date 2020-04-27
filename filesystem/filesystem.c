@@ -14,6 +14,8 @@
 #include "filesystem/filesystem.h" // Headers for the core functionality
 #include "filesystem/auxiliary.h"  // Headers for auxiliary functions
 #include "filesystem/metadata.h"   // Type and structure declaration of the file system
+#include <stdlib.h>
+#include <string.h>
 
 char i_map[MAX_N_INODES]; //Inode map
 char b_map[MAX_SIZE_SYS_FILES / BLOCK_SIZE]; //Block map
@@ -57,7 +59,7 @@ int mkFS(long deviceSize)
 	for(int i=0; i<sbk[0].num_inodes; i++){ bitmap_setbit(i_map, i, 0); }
 	for(int i=0; i<sbk[0].num_Blocks_Data; i++){ bitmap_setbit(b_map, i, 0); }
 	//We write in the disk
-	if(syncFS() != 0) return -1
+	if(syncFS() != 0) return -1;
 	return 0;
 
 }
