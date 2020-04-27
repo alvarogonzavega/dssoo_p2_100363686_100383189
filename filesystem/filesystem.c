@@ -361,20 +361,22 @@ int syncFS(void){
 	if(bwrite(disk, 1, (char *)&(sbk[0])) != 0) return -1;
 	//Now the same for blocks of maps (data and inodes)
 	int k=0;
-	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; (i++ & k++)){
+	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
 
 		if(bwrite(disk, 2+k, (char *)&(i_map[i])) != 0) return -1;
+		k++;
 
 	}
 
-	for(int i=0; i<sbk[0].num_Blocks_Map_Data; (i++ & k++)){
+	for(int i=0; i<sbk[0].num_Blocks_Map_Data; i++){
 
 		if(bwrite(disk, 2+k, (char *)&(b_map[i])) != 0) return -1;
+		k++;
 
 	}
 
 	//Now we write the inodes into the disk
-	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; (i++ & k++)){
+	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
 
 		if(bwrite(disk, 1+sbk[0].first, (char *)&(inodo[i])) != 0) return -1;
 
