@@ -43,8 +43,8 @@ typedef struct{
 
   unsigned int size;
   unsigned int block;
-  int state=0;
-  int pos=0;
+  int state;
+  int pos;
   char name[MAX_NAME_LENGTH];
 
 }inode;
