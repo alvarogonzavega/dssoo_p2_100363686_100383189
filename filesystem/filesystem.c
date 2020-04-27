@@ -20,7 +20,7 @@
 char i_map[MAX_N_INODES]; //Inode map
 char b_map[MAX_SIZE_SYS_FILES / BLOCK_SIZE]; //Block map
 sb sbk[1]; //Superblock
-inode *inodo; //Inode structure
+inode inodo[MAX_N_INODES]; //Inode structure
 char *disk = "disk.dat";
 
 /*
