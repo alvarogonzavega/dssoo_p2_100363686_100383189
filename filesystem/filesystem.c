@@ -54,6 +54,8 @@ int mkFS(long deviceSize)
 	sbk[0].first = 0;
 	sbk[0].size = deviceSize;
 	sbk[0].num_Blocks_Data = sbk[0].num_Blocks - sbk[0].num_Blocks_Map_Data - sbk[0].num_Blocks_Map_Inodes;
+	//We need allocate the memory with malloc
+	inodo = (inode *) malloc(sbk[0].num_inodes*sizeof(inode));
 	//With bitmap_setbit we can inilizate the maps
 	for(int i=0; i<sbk[0].num_inodes; i++){ bitmap_setbit(i_map, i, 0); }
 	for(int i=0; i<sbk[0].num_Blocks_Data; i++){ bitmap_setbit(b_map, i, 0); }
@@ -71,8 +73,13 @@ int mountFS(void)
 {
 	//We set the bytes to 0 in the inode structure
 	for(int i=0; i<sbk[0].num_inodes; i++){ memset(&(inodo[i]), 0, sizeof(inode)); }
+	//Security copy
+	char buffer[BLOCK_SIZE];
+	memcpy(buffer, &(sbk[0]), sizeof(sbk[0]));
 	//We read the superblock
 	if(bread(disk, 1, (char*)&(sbk[0])) != 0) return -1;
+	//We put the copy back
+	memcpy(sbk, buffer, sizeof(sbk));
 	//Now the same with the maps of blocks (inodes and data)
 	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
 
@@ -360,22 +367,20 @@ int syncFS(void){
 	if(bwrite(disk, 1, (char *)&(sbk[0])) != 0) return -1;
 	//Now the same for blocks of maps (data and inodes)
 	int k=0;
-	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
+	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; (i++ & k++)){
 
 		if(bwrite(disk, 2+k, (char *)&(i_map[i])) != 0) return -1;
-		k++;
 
 	}
 
-	for(int i=0; i<sbk[0].num_Blocks_Map_Data; i++){
+	for(int i=0; i<sbk[0].num_Blocks_Map_Data; (i++ & k++)){
 
 		if(bwrite(disk, 2+k, (char *)&(b_map[i])) != 0) return -1;
-		k++;
 
 	}
 
 	//Now we write the inodes into the disk
-	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
+	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; (i++ & k++)){
 
 		if(bwrite(disk, 1+sbk[0].first, (char *)&(inodo[i])) != 0) return -1;
 
