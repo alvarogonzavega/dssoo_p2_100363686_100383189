@@ -382,7 +382,7 @@ int syncFS(void){
 	//Now we write the inodes into the disk
 	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; (i++ & k++)){
 
-		if(bwrite(disk, 1+sbk[0].first, (char *)&(inodo[i])) != 0) return -1;
+		if(bwrite(disk, i+sbk[0].first, (char *)&(inodo[i])) != 0) return -1;
 
 	} 
 
