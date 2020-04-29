@@ -16,6 +16,7 @@
 #include "filesystem/metadata.h"   // Type and structure declaration of the file system
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 char i_map[MAX_N_INODES]; //Inode map
 char b_map[MAX_SIZE_SYS_FILES / BLOCK_SIZE]; //Block map
