@@ -54,8 +54,6 @@ int mkFS(long deviceSize)
 	sbk[0].first = 0;
 	sbk[0].size = deviceSize;
 	sbk[0].num_Blocks_Data = sbk[0].num_Blocks - sbk[0].num_Blocks_Map_Data - sbk[0].num_Blocks_Map_Inodes;
-	//We need allocate the memory with malloc
-	inodo = (inode *) malloc(sbk[0].num_inodes*sizeof(inode));
 	//With bitmap_setbit we can inilizate the maps
 	for(int i=0; i<sbk[0].num_inodes; i++){ bitmap_setbit(i_map, i, 0); }
 	for(int i=0; i<sbk[0].num_Blocks_Data; i++){ bitmap_setbit(b_map, i, 0); }
