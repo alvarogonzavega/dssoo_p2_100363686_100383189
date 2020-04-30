@@ -57,6 +57,7 @@ int mkFS(long deviceSize)
 	//With bitmap_setbit we can inilizate the maps
 	for(int i=0; i<sbk[0].num_inodes; i++){ bitmap_setbit(i_map, i, 0); }
 	for(int i=0; i<sbk[0].num_Blocks_Data; i++){ bitmap_setbit(b_map, i, 0); }
+	for(int i=0; i<MAX_N_INODES; i++){ inodo[i].state = 0; }
 	//We write in the disk
 	if(syncFS() != 0) return -1;
 	return 0;
@@ -133,11 +134,11 @@ int createFile(char *fileName)
 	//We check if we have reached the limit of inodes
 	int c=0;
 	for(int i=0; i<MAX_N_INODES; i++){
-		 if(strcmp(inodo[i].name, "")){
+		 if(strlen(inodo[i].name)>0){
 			  
 			  c++; 
 			  //if we already have that file we return -1
-			  if(strcmp(inodo[i].name, fileName) == 0) return -1;
+			  if(strncmp(inodo[i].name, fileName, strlen(fileName)) == 0) return -1;
 
 			}
 		
@@ -152,6 +153,7 @@ int createFile(char *fileName)
 		//We add the information
 		inodo[inodeid].size = 0;
 		inodo[inodeid].block = bid;
+		inodo[inodeid].position = 0;
 		strcpy(inodo[inodeid].name, fileName);
 		return 0;
 
@@ -449,7 +451,7 @@ int namei(char *fileName)
 
 	for(int i=0; i<MAX_N_INODES; i++){
 
-		if(strcmp(inodo[i].name, fileName)) return i;
+		if(strncmp(inodo[i].name, fileName, strlen(fileName))) return i;
 
 	}
 
