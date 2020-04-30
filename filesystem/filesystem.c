@@ -60,8 +60,8 @@ int mountFS(void)
 	memcpy(buffer, &(sbk[0]), sizeof(sbk[0]));
 	if(bread(disk, 1, (char *)&(sbk[0])) != 0) return -1;
 	//Now the same with the maps of blocks (inodes and data)
-	if(bread(disk, 1, (char*)&(i_map[i])) != 0) return -1;
-	if(bread(disk, 1, (char*)&(b_map[i])) != 0) return -1;
+	if(bread(disk, 1, (char*)&(i_map)) != 0) return -1;
+	if(bread(disk, 1, (char*)&(b_map)) != 0) return -1;
 	int k=0;
 	//We put the copy back
 	memcpy(sbk, buffer, sizeof(sbk));
@@ -329,8 +329,8 @@ int syncFS(void){
 	if(bwrite(disk, 1, (char *)&(sbk[0])) != 0) return -1;
 	//Now the same for blocks of maps (data and inodes)
 	int k=0;
-	if(bwrite(disk, 1+i, (char *)&(i_map[i])) != 0) return -1;
-	if(bwrite(disk, 1+i, (char *)&(b_map[i])) != 0) return -1;
+	if(bwrite(disk, 1, (char *)&(i_map)) != 0) return -1;
+	if(bwrite(disk, 1, (char *)&(b_map)) != 0) return -1;
 	//Now we write the inodes into the disk
 	for(int i=0; i<MAX_N_INODES; i++){
 
