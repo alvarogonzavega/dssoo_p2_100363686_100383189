@@ -32,7 +32,6 @@ typedef struct{
   unsigned int num_Blocks_Map_Inodes;
   unsigned int num_Blocks_Map_Data;
   unsigned int num_inodes;
-  unsigned int first;
   unsigned int size;
   unsigned int num_Blocks_Data;
   unsigned int num_Blocks;
@@ -43,8 +42,8 @@ typedef struct{
 
   unsigned int size;
   unsigned int block;
-  int state;
-  int pos;
+  unsigned int state;
+  unsigned int pos;
   char name[MAX_NAME_LENGTH];
 
 }inode;

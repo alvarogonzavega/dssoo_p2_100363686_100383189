@@ -33,8 +33,6 @@ int mkFS(long deviceSize)
 
 	//We see if the size is between the allowed values
 	if(deviceSize > MAX_SIZE_SYS_FILES || deviceSize < MIN_SIZE_SYS_FILES) return -1;
-	//We stablish the magic number
-	sbk[0].magic_number = MAGIC_NUMBER;
 	int check = MAX_N_INODES * sizeof(inode) / BLOCK_SIZE;
 	//If the number of blocks of inodes is less than 1, we put it to 1
 	if(check < 1) sbk[0].num_Blocks_Map_Inodes = 1;
@@ -51,7 +49,6 @@ int mkFS(long deviceSize)
 	else sbk[0].num_Blocks_Map_Data = check;
 	//We stablish the number of inodes, the first inode (0), the size and the number of blocks of data
 	sbk[0].num_inodes = MAX_N_INODES;
-	sbk[0].first = 0;
 	sbk[0].size = deviceSize;
 	sbk[0].num_Blocks_Data = sbk[0].num_Blocks - sbk[0].num_Blocks_Map_Data - sbk[0].num_Blocks_Map_Inodes;
 	//With bitmap_setbit we can inilizate the maps
