@@ -82,20 +82,23 @@ int mountFS(void)
 	//Now the same with the maps of blocks (inodes and data)
 	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
 
-		if(bread(disk, 2+i, (char*)&(i_map[i])) != 0) return -1;
+		if(bread(disk, 1, (char*)&(i_map[i])) != 0) return -1;
 
 	}
 
 	for(int i=0; i<sbk[0].num_Blocks_Map_Data; i++){
 
-		if(bread(disk, 2+i+sbk[0].num_Blocks_Map_Inodes, (char*)&(b_map[i])) != 0) return -1;
+		if(bread(disk, 1, (char*)&(b_map[i])) != 0) return -1;
 
 	}
 
-	//Now we read the inodes 
-	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
+	int k=0;
 
-		if(bread(disk, i+sbk[0].first, (char*)&(inodo[i])) != 0) return -1;
+	//Now we read the inodes 
+	for(int i=0; i<MAX_N_INODES; i++){
+
+		if(i>41) k++;
+		if(bread(disk, 2+k, (char*)&(inodo[i])) != 0) return -1;
 
 	}
 
@@ -369,22 +372,21 @@ int syncFS(void){
 	int k=0;
 	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
 
-		if(bwrite(disk, 2+k, (char *)&(i_map[i])) != 0) return -1;
-		k++;
+		if(bwrite(disk, 1+i, (char *)&(i_map[i])) != 0) return -1;
 
 	}
 
 	for(int i=0; i<sbk[0].num_Blocks_Map_Data; i++){
 
-		if(bwrite(disk, 2+k, (char *)&(b_map[i])) != 0) return -1;
-		k++;
+		if(bwrite(disk, 1+i, (char *)&(b_map[i])) != 0) return -1;
 
 	}
 
 	//Now we write the inodes into the disk
-	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
+	for(int i=0; i<MAX_N_INODES; i++){
 
-		if(bwrite(disk, i+sbk[0].first, (char *)&(inodo[i])) != 0) return -1;
+		if(i>41) k++;
+		if(bwrite(disk, 2+k, (char *)&(inodo[i])) != 0) return -1;
 
 	} 
 
