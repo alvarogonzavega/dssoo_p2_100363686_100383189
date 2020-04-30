@@ -18,7 +18,6 @@ static inline void bitmap_setbit(char *bitmap_, int i_, int val_) {
     bitmap_[(i_ >> 3)] &= ~(1 << (i_ & 0x07));
 }
 
-#define MAGIC_NUMBER 12345
 #define MAX_N_INODES 48
 #define BLOCK_SIZE 2048
 #define MAX_SIZE_FILE 2048
@@ -28,7 +27,6 @@ static inline void bitmap_setbit(char *bitmap_, int i_, int val_) {
 
 typedef struct{
 
-  unsigned int magic_number;
   unsigned int num_Blocks_Map_Inodes;
   unsigned int num_Blocks_Map_Data;
   unsigned int num_inodes;
