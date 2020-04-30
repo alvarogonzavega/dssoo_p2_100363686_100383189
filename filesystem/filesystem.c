@@ -33,24 +33,11 @@ int mkFS(long deviceSize)
 
 	//We see if the size is between the allowed values
 	if(deviceSize > MAX_SIZE_SYS_FILES || deviceSize < MIN_SIZE_SYS_FILES) return -1;
-	int check = MAX_N_INODES * sizeof(inode) / BLOCK_SIZE;
-	//If the number of blocks of inodes is less than 1, we put it to 1
-	if(check < 1) sbk[0].num_Blocks_Map_Inodes = 1;
-	//If is bigger than allowed we have an error
-	else if(check > MAX_N_INODES) return -1;
-	else sbk[0].num_Blocks_Map_Inodes = check;
-	//We stablish the number of blocks
+	//We stablish the number of blocks, inodes, the size and the number of blocks of data
 	sbk[0].num_Blocks = deviceSize / BLOCK_SIZE;
-	check = sbk[0].num_Blocks * sizeof(int) / BLOCK_SIZE;
-	//If the number of blocks of data is less than 1, we put it to 1
-	if(check < 1) sbk[0].num_Blocks_Map_Data = 1;
-	//If is bigger we have an error
-	else if(check > MAX_N_INODES) return -1;
-	else sbk[0].num_Blocks_Map_Data = check;
-	//We stablish the number of inodes, the first inode (0), the size and the number of blocks of data
 	sbk[0].num_inodes = MAX_N_INODES;
 	sbk[0].size = deviceSize;
-	sbk[0].num_Blocks_Data = sbk[0].num_Blocks - sbk[0].num_Blocks_Map_Data - sbk[0].num_Blocks_Map_Inodes;
+	sbk[0].num_Blocks_Data = sbk[0].num_Blocks - 3;
 	//With bitmap_setbit we can inilizate the maps
 	for(int i=0; i<sbk[0].num_inodes; i++){ bitmap_setbit(i_map, i, 0); }
 	for(int i=0; i<sbk[0].num_Blocks_Data; i++){ bitmap_setbit(b_map, i, 0); }
@@ -68,30 +55,16 @@ int mountFS(void)
 {
 	//We set the bytes to 0 in the inode structure
 	for(int i=0; i<sbk[0].num_inodes; i++){ memset(&(inodo[i]), 0, sizeof(inode)); }
-	int a = sbk[0].num_Blocks_Map_Inodes;
-	int b = sbk[0].num_Blocks_Map_Data;
 	//Security copy
 	char buffer[BLOCK_SIZE];
 	memcpy(buffer, &(sbk[0]), sizeof(sbk[0]));
-	//We put the copy back
-	memcpy(sbk, buffer, sizeof(sbk));
+	if(bread(disk, 1, (char *)&(sbk[0])) != 0) return -1;
 	//Now the same with the maps of blocks (inodes and data)
-	for(int i=0; i<a; i++){
-
-		if(bread(disk, 1, (char*)&(i_map[i])) != 0) return -1;
-
-	}
-
-	for(int i=0; i<b; i++){
-
-		if(bread(disk, 1, (char*)&(b_map[i])) != 0) return -1;
-
-	}
-
+	if(bread(disk, 1, (char*)&(i_map[i])) != 0) return -1;
+	if(bread(disk, 1, (char*)&(b_map[i])) != 0) return -1;
 	int k=0;
 	//We put the copy back
 	memcpy(sbk, buffer, sizeof(sbk));
-
 	//Now we read the inodes 
 	for(int i=0; i<MAX_N_INODES; i++){
 
@@ -369,18 +342,8 @@ int syncFS(void){
 	if(bwrite(disk, 1, (char *)&(sbk[0])) != 0) return -1;
 	//Now the same for blocks of maps (data and inodes)
 	int k=0;
-	for(int i=0; i<sbk[0].num_Blocks_Map_Inodes; i++){
-
-		if(bwrite(disk, 1+i, (char *)&(i_map[i])) != 0) return -1;
-
-	}
-
-	for(int i=0; i<sbk[0].num_Blocks_Map_Data; i++){
-
-		if(bwrite(disk, 1+i, (char *)&(b_map[i])) != 0) return -1;
-
-	}
-
+	if(bwrite(disk, 1+i, (char *)&(i_map[i])) != 0) return -1;
+	if(bwrite(disk, 1+i, (char *)&(b_map[i])) != 0) return -1;
 	//Now we write the inodes into the disk
 	for(int i=0; i<MAX_N_INODES; i++){
 
