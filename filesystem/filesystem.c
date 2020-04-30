@@ -106,31 +106,18 @@ int createFile(char *fileName)
 	
 	//We check the length of the file
 	if(strlen(fileName)> MAX_NAME_LENGTH) return -2;
-	//We check if we have reached the limit of inodes
-	int c=0;
-	for(int i=0; i<MAX_N_INODES; i++){
-		 if(strlen(inodo[i].name)>0){
-			  
-			  c++; 
-			  //if we already have that file we return -1
-			  if(strncmp(inodo[i].name, fileName, strlen(fileName)) == 0) return -1;
-
-			}
-		
-		}
-
-		//If we have more than 48 elements we can't add another one
-		if(c>MAX_N_INODES) return -2;
-		int bid = balloc();
-		int inodeid = ialloc();
-		//If there is no free inodes or blocks
-		if(bid == -1 || inodeid == -1) return -2;
-		//We add the information
-		inodo[inodeid].size = 0;
-		inodo[inodeid].block = bid;
-		inodo[inodeid].pos = 0;
-		strcpy(inodo[inodeid].name, fileName);
-		return 0;
+	//We check if we have the same file
+	if(namei(fileName)!=-1) return -1;
+	int bid = balloc();
+	int inodeid = ialloc();
+	//If there is no free inodes or blocks
+	if(bid == -1 || inodeid == -1) return -2;
+	//We add the information
+	inodo[inodeid].size = 0;
+	inodo[inodeid].block = bid;
+	inodo[inodeid].pos = 0;
+	strcpy(inodo[inodeid].name, fileName);
+	return 0;
 
 }
 
@@ -147,7 +134,7 @@ int removeFile(char *fileName)
 	//We check if the inode is open
 	if(inodo[i].state != 0) return -2;
 	//We free the block and the inode
-	if(bfree(i)!=0 || ifree(i)!=0) return -2;
+	if(bfree(inodo[i].block)!=0 || ifree(i)!=0) return -2;
 	return 0;
 
 }
@@ -443,7 +430,7 @@ int ifree(int i){
  */
 int bfree(int i){
 
-	if(i<0 || i>MAX_N_INODES) return -1;
+	if(i<0 || i>sbk[0].num_Blocks_Data) return -1;
 	bitmap_setbit(b_map, i, 0);
 	return 0;
 
