@@ -153,7 +153,7 @@ int createFile(char *fileName)
 		//We add the information
 		inodo[inodeid].size = 0;
 		inodo[inodeid].block = bid;
-		inodo[inodeid].position = 0;
+		inodo[inodeid].pos = 0;
 		strcpy(inodo[inodeid].name, fileName);
 		return 0;
 
@@ -451,7 +451,7 @@ int namei(char *fileName)
 
 	for(int i=0; i<MAX_N_INODES; i++){
 
-		if(strncmp(inodo[i].name, fileName, strlen(fileName))) return i;
+		if(strncmp(inodo[i].name, fileName, strlen(fileName)) == 0) return i;
 
 	}
 
