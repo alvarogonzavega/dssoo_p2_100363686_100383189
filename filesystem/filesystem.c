@@ -65,7 +65,7 @@ int mountFS(void)
 	int k=0;
 	//We put the copy back
 	memcpy(sbk, buffer, sizeof(sbk));
-	//Now we read the inodes 
+	//Now we read the inodes
 	for(int i=0; i<MAX_N_INODES; i++){
 
 		if(i>41) k++;
@@ -75,7 +75,7 @@ int mountFS(void)
 
 	for(int i=0; i<MAX_N_INODES; i++){ inodo[i].state = 0; }
 	return 0;
-	
+
 }
 
 /*
@@ -83,10 +83,10 @@ int mountFS(void)
  * @return 	0 if success, -1 otherwise.
  */
 int unmountFS(void)
-{ 
+{
 	//We check if there is any inode open
 	for(int i=0; i<sbk[0].num_inodes; i++){
-	
+
 		if(inodo[i].state !=0) return -1;
 
 	}
@@ -103,7 +103,7 @@ int unmountFS(void)
  */
 int createFile(char *fileName)
 {
-	
+
 	//We check the length of the file
 	if(strlen(fileName)> MAX_NAME_LENGTH) return -2;
 	//We check if we have the same file
@@ -183,11 +183,11 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 	if(inodo[fileDescriptor].state == 0) return -1;
 	char rbf[BLOCK_SIZE]; //Char were we will put the buffer
 	int start = inodo[fileDescriptor].pos;
-	int end = start + numBytes - 1;
+	int end = start + numBytes;
 	//If the starting point is at the end or there is no bytes to read, we return 0
-	if(start > inodo[fileDescriptor].size || numBytes == 0) return 0;
+	if(start == inodo[fileDescriptor].size || numBytes == 0) return 0;
 	//If the buffer wants to read over the size of the file we need to put the end to size
-	if(end>inodo[fileDescriptor].size) end = inodo[fileDescriptor].size-1;
+	if(end>inodo[fileDescriptor].size) end = inodo[fileDescriptor].size;
 	//Total of bytes to read
 	int total = end - start;
 	bread(disk, fileDescriptor, rbf); //We read the total bytes specified
@@ -210,11 +210,11 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 	if(inodo[fileDescriptor].state == 0) return -1;
 	char wbf[BLOCK_SIZE]; //Char were we will put the buffer
 	int start = inodo[fileDescriptor].pos;
-	int end = start + numBytes - 1;
+	int end = start + numBytes;
 	//If the starting point is over the maximum file size or there is no bytes to write, we return 0
 	if(start > MAX_SIZE_FILE || numBytes == 0) return 0;
 	//If the buffer wants to write over the maximum size of the file we need to put a limit
-	if(end>MAX_SIZE_FILE) end = MAX_SIZE_FILE-1;
+	if(end>MAX_SIZE_FILE) end = MAX_SIZE_FILE;
 	//Total bytes to write
 	int total = end - start;
 	bread(disk, fileDescriptor, wbf); //We read the total bytes specified
@@ -238,7 +238,7 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 	//The inode must be open
 	if(inodo[fileDescriptor].state==0) return -1;
 	switch(whence){
-	
+
 		case FS_SEEK_CUR: //We add the offset to the actual position
 
 			//Case where the offset and the actual position is greater than the maximum size allowed
@@ -337,7 +337,7 @@ int syncFS(void){
 		if(i>41) k++;
 		if(bwrite(disk, 2+k, (char *)&(inodo[i])) != 0) return -1;
 
-	} 
+	}
 
 	return 0;
 
