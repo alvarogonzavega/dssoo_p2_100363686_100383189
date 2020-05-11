@@ -20,15 +20,13 @@ static inline void bitmap_setbit(char *bitmap_, int i_, int val_) {
 
 #define MAX_N_INODES 48
 #define BLOCK_SIZE 2048
-#define MAX_SIZE_FILE 2048
+#define MAX_SIZE_FILE 10 * 1024
 #define MAX_NAME_LENGTH 32
 #define MIN_SIZE_SYS_FILES 460 * 1024
 #define MAX_SIZE_SYS_FILES 600 * 1024
 
 typedef struct{
 
-  unsigned int num_Blocks_Map_Inodes;
-  unsigned int num_Blocks_Map_Data;
   unsigned int num_inodes;
   unsigned int size;
   unsigned int num_Blocks_Data;
@@ -39,9 +37,11 @@ typedef struct{
 typedef struct{
 
   unsigned int size;
-  unsigned int block;
+  unsigned int block[MAX_SIZE_FILE/BLOCK_SIZE];
   unsigned int state;
   unsigned int pos;
+  unsigned int crc;
+  unsigned char hasIntegrity;
   char name[MAX_NAME_LENGTH];
 
 }inode;
