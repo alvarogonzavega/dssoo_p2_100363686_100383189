@@ -63,8 +63,6 @@ int mountFS(void)
 	if(bread(disk, 1, (char*)&(i_map)) != 0) return -1;
 	if(bread(disk, 1, (char*)&(b_map)) != 0) return -1;
 	int k=0;
-	//We put the copy back
-	memcpy(sbk, buffer, sizeof(sbk));
 	//Now we read the inodes
 	for(int i=0; i<MAX_N_INODES; i++){
 
@@ -74,8 +72,9 @@ int mountFS(void)
 	}
 
 	for(int i=0; i<MAX_N_INODES; i++){ inodo[i].state = 0; }
+	//We put the copy back
+	memcpy(&(sbk[0]), buffer, sizeof(sbk[0]));
 	return 0;
-
 }
 
 /*
@@ -594,20 +593,23 @@ int removeLn(char *linkName)
  */
 int syncFS(void){
 
+	char a[BLOCK_SIZE];
+	char b[BLOCK_SIZE];
+	char c[BLOCK_SIZE];
 	//We write the superblock
-	if(bwrite(disk, 1, (char *)&(sbk[0])) != 0) return -1;
+	char buffer[BLOCK_SIZE];
+	memcpy(buffer, &(sbk[0]), sizeof(sbk[0]));
+	memmove(&(sbk[0]), a, sizeof(sb));
+	memcpy(&(sbk[0]), buffer, sizeof(sbk[0]));
+	memmove(&(i_map), a, sizeof(sb));
+	memmove(&(b_map), a, sizeof(sb));
+	if(bwrite(disk, 1, a) != 0) return -1;
 	//Now the same for blocks of maps (data and inodes)
-	int k=0;
-	if(bwrite(disk, 1, (char *)&(i_map)) != 0) return -1;
-	if(bwrite(disk, 1, (char *)&(b_map)) != 0) return -1;
+	memmove(&(inodo[0]), b, 31*sizeof(inode));
+	memmove(&(inodo[31]), c, 17*sizeof(inode));
 	//Now we write the inodes into the disk
-	for(int i=0; i<MAX_N_INODES; i++){
-
-		if(i>31) k++;
-		if(bwrite(disk, 2+k, (char *)&(inodo[i])) != 0) return -1;
-
-	}
-
+	if(bwrite(disk, 2, b)) return -1;
+	if(bwrite(disk, 3, c)) return -1;
 	return 0;
 
 }
