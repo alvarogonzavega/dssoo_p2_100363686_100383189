@@ -66,7 +66,7 @@ int mountFS(void)
 	//Now we read the inodes
 	for(int i=0; i<MAX_N_INODES; i++){
 
-		if(i>31) k++;
+		if(i>29) k++;
 		if(bread(disk, 2+k, (char*)&(inodo[i])) != 0) return -1;
 
 	}
@@ -605,8 +605,8 @@ int syncFS(void){
 	memmove(&(b_map), a, sizeof(sb));
 	if(bwrite(disk, 1, a) != 0) return -1;
 	//Now the same for blocks of maps (data and inodes)
-	memmove(&(inodo[0]), b, 31*sizeof(inode));
-	memmove(&(inodo[31]), c, 17*sizeof(inode));
+	memmove(&(inodo[0]), b, 29*sizeof(inode));
+	memmove(&(inodo[29]), c, 19*sizeof(inode));
 	//Now we write the inodes into the disk
 	if(bwrite(disk, 2, b)) return -1;
 	if(bwrite(disk, 3, c)) return -1;
