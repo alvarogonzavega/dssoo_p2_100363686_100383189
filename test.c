@@ -614,14 +614,14 @@ int main()
 
 	///////
 
-	char buffer[2050];
+	char buffer[10300];
 	int k=0;
-	for(int i=0; i<2050; i++){
+	for(int i=0; i<10300; i++){
 		 if(i==9) k=0;
 		 buffer[i]=k;
 		 k++;
 	 }
-	ret = writeFile(0, buffer, 2050);
+	ret = writeFile(0, buffer, 10300);
 	if (ret < 0)
 	{
 		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
@@ -933,7 +933,7 @@ int main()
 
 
 	///////
-	
+	/*
 	ret = mkFS(460 * 1024);
 	if (ret != 0)
 	{
@@ -1037,5 +1037,5 @@ int main()
 	///////
 
 	return 0;
-	
+*/
 }

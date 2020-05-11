@@ -68,7 +68,7 @@ int mountFS(void)
 	//Now we read the inodes
 	for(int i=0; i<MAX_N_INODES; i++){
 
-		if(i>41) k++;
+		if(i>31) k++;
 		if(bread(disk, 2+k, (char*)&(inodo[i])) != 0) return -1;
 
 	}
@@ -114,8 +114,10 @@ int createFile(char *fileName)
 	if(bid == -1 || inodeid == -1) return -2;
 	//We add the information
 	inodo[inodeid].size = 0;
-	inodo[inodeid].block = bid;
+	inodo[inodeid].block[0] = bid;
 	inodo[inodeid].pos = 0;
+	inodo[inodeid].hasIntegrity = 0;
+	inodo[inodeid].crc = 0;
 	strcpy(inodo[inodeid].name, fileName);
 	return 0;
 
@@ -134,7 +136,7 @@ int removeFile(char *fileName)
 	//We check if the inode is open
 	if(inodo[i].state != 0) return -2;
 	//We free the block and the inode
-	if(bfree(inodo[i].block)!=0 || ifree(i)!=0) return -2;
+	if(bfree(i)!=0 || ifree(i)!=0) return -2;
 	return 0;
 
 }
@@ -182,18 +184,56 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 	//We need to check if the file is open
 	if(inodo[fileDescriptor].state == 0) return -1;
 	char rbf[BLOCK_SIZE]; //Char were we will put the buffer
+	int blockActual=inodo[fileDescriptor].pos/BLOCK_SIZE;
 	int start = inodo[fileDescriptor].pos;
 	int end = start + numBytes;
-	//If the starting point is at the end or there is no bytes to read, we return 0
-	if(start == inodo[fileDescriptor].size || numBytes == 0) return 0;
-	//If the buffer wants to read over the size of the file we need to put the end to size
-	if(end>inodo[fileDescriptor].size) end = inodo[fileDescriptor].size;
-	//Total of bytes to read
-	int total = end - start;
-	bread(disk, fileDescriptor, rbf); //We read the total bytes specified
-	memmove(buffer, rbf+inodo[fileDescriptor].pos, total); //We move the pointer
-	inodo[fileDescriptor].pos += end; //We stablish the new position
-	return total;
+	int blockF = end/BLOCK_SIZE; //The final block of lecture
+	while(blockF>5){blockF--;}
+	int total=0;
+	if(blockActual == blockF){ //Only one block to read
+
+		//If the starting point is at the end or there is no bytes to read, we return 0
+		if(start == inodo[fileDescriptor].size || numBytes == 0) return 0;
+		//If the buffer wants to read over the size of the file we need to put the end to size
+		if(end>inodo[fileDescriptor].size) end = inodo[fileDescriptor].size;
+		//Total of bytes to read
+		total = end - start;
+		bread(disk, inodo[fileDescriptor].block[blockActual], rbf); //We read the total bytes specified
+		memmove(buffer, rbf+inodo[fileDescriptor].pos, total); //We move the pointer
+		inodo[fileDescriptor].pos += end; //We stablish the new position
+		return total;
+
+	}else{
+
+		//More than one block to read
+		int p=end-start;
+		while(p>BLOCK_SIZE){ p -= BLOCK_SIZE; } //We reduce until we reach
+		for(int i=blockActual; i<=blockF; i++){
+
+			if(i==blockF){
+
+				bread(disk, inodo[fileDescriptor].block[i], rbf);
+				memmove(buffer+total, rbf, p);
+				total += p;
+
+			}else{
+
+				bread(disk, inodo[fileDescriptor].block[i], rbf);
+				memmove(buffer+total, rbf, BLOCK_SIZE);
+				total += BLOCK_SIZE;
+
+			}
+
+
+
+
+		}
+
+	  inodo[fileDescriptor].pos += end;
+		return total;
+
+
+	}
 
 }
 
@@ -211,18 +251,63 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 	char wbf[BLOCK_SIZE]; //Char were we will put the buffer
 	int start = inodo[fileDescriptor].pos;
 	int end = start + numBytes;
+		//If the buffer wants to write over the maximum size of the file we need to put a limit
+	if(end>MAX_SIZE_FILE) end = MAX_SIZE_FILE;
+	int blockI = start/BLOCK_SIZE;
+	int blockF = end/BLOCK_SIZE;
+	while(blockF>5){blockF--;}
 	//If the starting point is over the maximum file size or there is no bytes to write, we return 0
 	if(start > MAX_SIZE_FILE || numBytes == 0) return 0;
-	//If the buffer wants to write over the maximum size of the file we need to put a limit
-	if(end>MAX_SIZE_FILE) end = MAX_SIZE_FILE;
 	//Total bytes to write
-	int total = end - start;
-	bread(disk, fileDescriptor, wbf); //We read the total bytes specified
-	memmove(buffer, wbf+inodo[fileDescriptor].pos, total); //We move the pointer
-	bwrite(disk, fileDescriptor, wbf); //We write on the file
-	inodo[fileDescriptor].size += total; //We update the size of the file
-	inodo[fileDescriptor].pos += end; //We stablish the new position
-	return total;
+	if(blockI == blockF){
+
+		int total = end - start;
+		bread(disk, inodo[fileDescriptor].block[blockI], wbf); //We read the total bytes specified
+		memmove(buffer, wbf+inodo[fileDescriptor].pos, total); //We move the pointer
+		bwrite(disk, fileDescriptor, wbf); //We write on the file
+		inodo[fileDescriptor].size += total; //We update the size of the file
+		inodo[fileDescriptor].pos += end; //We stablish the new position
+		return total;
+
+	}else{
+
+		int total=0;
+		int p=end-start; while(p>BLOCK_SIZE){ p-=BLOCK_SIZE; }
+		for(int i=blockI; i<=blockF; i++){
+
+			if(i>blockI){
+
+				int b=balloc();
+				if(b==-1) return -1;
+				inodo[fileDescriptor].block[i]= b;
+
+			}
+
+			if(i==blockF){
+
+				bread(disk, inodo[fileDescriptor].block[i], wbf); //We read the total bytes specified
+				memmove(buffer+total, wbf+inodo[fileDescriptor].pos, p); //We move the pointer
+				bwrite(disk, inodo[fileDescriptor].block[i], wbf);
+				total += p;
+
+			}else{
+
+				bread(disk, inodo[fileDescriptor].block[i], wbf); //We read the total bytes specified
+				memmove(buffer+total, wbf+inodo[fileDescriptor].pos, BLOCK_SIZE); //We move the pointer
+				bwrite(disk, inodo[fileDescriptor].block[i], wbf);
+				total += BLOCK_SIZE;
+
+
+			}
+
+
+		}
+
+		inodo[fileDescriptor].size += total; //We update the size of the file
+		inodo[fileDescriptor].pos += end; //We stablish the new position
+		return total;
+
+	}
 
 }
 
@@ -269,7 +354,40 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 
 int checkFile (char * fileName)
 {
-    return -2;
+	// TODO if file is open and modified, it will always detect corruption.
+	// TODO check first if the file has integrity
+	// To get the contents of the file, we choosed to use readFile
+
+	// If the file isnt opened, it opens it and closes it at the end
+	int of_result;
+	of_result = openFile(fileName);
+	int file_inode_n = namei(fileName);
+
+	if (of_result == -1 || namei == -1) return -2; // File doesnt exist
+
+	// Put the position on the start of the file and then put it back
+	inode* file_inode = &inodo[file_inode_n];
+	unsigned int orig_inode_pos = file_inode->pos;
+	unsigned int file_length = file_inode->size;
+	file_inode->pos = 0;
+
+	// Read the entire file
+	unsigned char* file_data;
+	readFile(file_inode_n, file_data, file_length);
+
+	// Calculate and compare the CRC
+	uint32_t new_crc = CRC32(file_data, file_length);
+	uint32_t stored_crc = file_inode->crc;
+
+	int result = 0;
+	if ( new_crc != stored_crc ) result = -1;	// File is corrupted
+
+	// Put back the original inode position
+	file_inode->pos = orig_inode_pos;
+
+	if (of_result >= 0) closeFile(of_result); // If file wasnt originaly open, it closes it again
+
+    return result;
 }
 
 /*
@@ -279,7 +397,36 @@ int checkFile (char * fileName)
 
 int includeIntegrity (char * fileName)
 {
-    return -2;
+	// To get the contents of the file, we choosed to use readFile
+
+	// If the file isnt opened, it opens it and closes it at the end
+	int of_result;
+	of_result = openFile(fileName);
+	int file_inode_n = namei(fileName);
+
+	if (of_result == -1 || namei == -1) return -1; // File doesnt exist
+
+	// Put the position on the start of the file and then put it back
+	inode* file_inode = &inodo[file_inode_n];
+	unsigned int orig_inode_pos = file_inode->pos;
+	unsigned int file_length = file_inode->size;
+	file_inode->pos = 0;
+
+	// Read the entire file
+	unsigned char* file_data;
+	readFile(file_inode_n, file_data, file_length);
+
+	// Calculate and store the CRC
+	uint32_t new_crc = CRC32(file_data, file_length);
+	file_inode->crc = new_crc;
+	file_inode->hasIntegrity = 1;
+
+	// Put back the original inode position
+	file_inode->pos = orig_inode_pos;
+
+	if (of_result >= 0) closeFile(of_result); // If file wasnt originaly open, it closes it again
+
+    return 0;
 }
 
 /*
@@ -288,8 +435,18 @@ int includeIntegrity (char * fileName)
  */
 int openFileIntegrity(char *fileName)
 {
+	// The file must have integrity first
+	if ( inodo[namei(fileName)].hasIntegrity == 0 ) return -3;
 
-    return -2;
+	int cf_result = checkFile(fileName);
+	if ( cf_result == -1 ) return -2; // File is corrupted
+	else if ( cf_result == -2 ) return -3; // Other check error
+
+	int of_result = openFile(fileName);
+	if ( of_result == -1 ) return -1; // File doesnt exist
+	else if (of_result == -2 ) return -3; // Other open error (file is already open)
+	
+    return of_result;
 }
 
 /*
@@ -298,16 +455,57 @@ int openFileIntegrity(char *fileName)
  */
 int closeFileIntegrity(int fileDescriptor)
 {
-    return -1;
-}
+	// The file must have integrity first
+	if ( inodo[fileDescriptor].hasIntegrity == 0 ) return -1;
 
+	if (includeIntegrity(inodo[fileDescriptor].name) != 0) return -1;
+	if (closeFile(fileDescriptor) != 0) return -1;
+
+    return 0;
+}
 /*
  * @brief	Creates a symbolic link to an existing file in the file system.
  * @return	0 if success, -1 if file does not exist, -2 in case of error.
  */
 int createLn(char *fileName, char *linkName)
 {
-    return -1;
+	// The symbolic links will be stored in a specific file named "symlinkFile.sys"
+	
+	// Check if the file exists first
+	if ( namei(fileName) == -1 ) return -1;
+    
+	int of_result = openFile(SYMLINK_FILE);
+	
+	if (of_result == -2) ; // The file is probably open already (do nothing)
+	else if (of_result == -1) // If SYMLINK file doesnt exist, create it
+	{
+		if ( createFile(SYMLINK_FILE) == -2 ) return -2;
+		of_result = openFile(SYMLINK_FILE);
+	}
+
+	char* links_buffer[MAX_FILE_SIZE];
+	if (readFile(of_result, links_buffer, MAX_FILE_SIZE) == -1) return -2;
+
+	int end_file_pointer = strlen(links_buffer);
+
+	// If it doesnt fit in the file, return error
+	if ( (end_file_pointer + strlen(linkName) + 2) >= MAX_SIZE_FILE ) { 
+		return -2;
+	}
+
+	// Concat the new symbolic link in the buffer (with specific format)
+	strncat(links_buffer, (char*)28, 1);
+	strncat(links_buffer, fileName, strlen(fileName));
+	strncat(links_buffer, (char*)29, 1);
+	strncat(links_buffer, linkName, strlen(linkName));
+	
+	// Write the buffer in the file and close it
+	lseekFile(of_result, 0, FS_SEEK_BEGIN);
+	if (writeFile(of_result, links_buffer, strlen(links_buffer)) == -1) return -2;
+
+	closeFile(of_result);
+
+	return 0;
 }
 
 /*
@@ -316,7 +514,78 @@ int createLn(char *fileName, char *linkName)
  */
 int removeLn(char *linkName)
 {
-    return -2;
+	// The symbolic links are stored in a specific file named "symlinkFile.sys"
+
+	int link_length = strlen(linkName);
+
+	int of_result = openFile(SYMLINK_FILE);
+	
+	if (of_result == -2) ;
+	else if (of_result == -1) // If SYMLINK file doesnt exist, the link doesnt exist
+	{
+		return -1;
+	}
+
+	char* links_buffer[MAX_FILE_SIZE];
+	if (readFile(of_result, links_buffer, MAX_FILE_SIZE) == -1) return -2;
+
+	int end_file_pointer = strlen(links_buffer);
+	int buffer_pointer = 0;
+	int pointer_to_entry = 1;
+	int pointer_to_linkname = -1;
+	int found = 0;
+	
+	// Search through the file to find the link
+	while (buffer_pointer < end_file_pointer && !found)
+	{
+		// Find next character delimitator 29 (start of linkname)
+		while(links_buffer[buffer_pointer] != 29 && buffer_pointer < end_file_pointer)
+		{
+			++buffer_pointer;
+		}
+		if (buffer_pointer == end_file_pointer) break;
+		++buffer_pointer;
+		pointer_to_linkname = buffer_pointer; // Point to the linkname
+
+
+		// Match the name or go to the next delimitator character
+		found = 1;
+		for(int local=0; local < link_length && links_buffer[buffer_pointer] != 28 && found; local++)
+		{
+			if (links_buffer[buffer_pointer] != linkName[local]) found = 0;
+			++buffer_pointer;
+		}
+
+		// If not found, continue until the next character delimitator 28 (start of entry) or end of file
+		if (!found)
+		{
+			while(links_buffer[buffer_pointer] != 28 && buffer_pointer < end_file_pointer)
+			{
+				++buffer_pointer;
+			}
+			++buffer_pointer;
+			pointer_to_entry = buffer_pointer;
+		}
+	}
+
+	if (found == 0) return -1;
+
+	// Cut the buffer
+	int begin = pointer_to_entry-1;
+	int len = (pointer_to_linkname - (pointer_to_entry-1)) + link_length;
+	int l = strlen(links_buffer);
+
+	if (begin + len > l) len = l - begin;
+	memmove(links_buffer + begin, links_buffer + begin + len, l - len + 1);
+
+
+	// Write the buffer in the file and close it
+	lseekFile(of_result, 0, FS_SEEK_BEGIN);
+	if (writeFile(of_result, links_buffer, strlen(links_buffer)) == -1) return -2;
+
+	closeFile(of_result);
+
+	return 0;
 }
 
 /*
@@ -334,7 +603,7 @@ int syncFS(void){
 	//Now we write the inodes into the disk
 	for(int i=0; i<MAX_N_INODES; i++){
 
-		if(i>41) k++;
+		if(i>31) k++;
 		if(bwrite(disk, 2+k, (char *)&(inodo[i])) != 0) return -1;
 
 	}
@@ -430,9 +699,13 @@ int ifree(int i){
  */
 int bfree(int i){
 
-	if(i<0 || i>sbk[0].num_Blocks_Data) return -1;
-	bitmap_setbit(b_map, i, 0);
-	return 0;
+for(int j=0; j<5; j++){
 
+	if(inodo[i].block[j]>sbk[0].num_Blocks_Data) return -1;
+		bitmap_setbit(b_map, inodo[i].block[j], 0);
+
+	}
+
+	return 0;
 
 }
