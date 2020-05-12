@@ -32,6 +32,7 @@ int mkFS(long deviceSize)
 {
 
 	//We see if the size is between the allowed values
+	print(deviceSize);
 	if(deviceSize > MAX_SIZE_SYS_FILES || deviceSize < MIN_SIZE_SYS_FILES) return -1;
 	//We stablish the number of blocks, inodes, the size and the number of blocks of data
 	sbk[0].num_Blocks = deviceSize / BLOCK_SIZE;
@@ -362,7 +363,7 @@ int checkFile (char * fileName)
 	of_result = openFile(fileName);
 	int file_inode_n = namei(fileName);
 
-	if (of_result == -1 || namei == -1) return -2; // File doesnt exist
+	if (of_result == -1 || file_inode_n == -1) return -2; // File doesnt exist
 
 	// Put the position on the start of the file and then put it back
 	inode* file_inode = &inodo[file_inode_n];
@@ -371,7 +372,7 @@ int checkFile (char * fileName)
 	file_inode->pos = 0;
 
 	// Read the entire file
-	unsigned char* file_data;
+	unsigned char file_data[file_length];
 	readFile(file_inode_n, file_data, file_length);
 
 	// Calculate and compare the CRC
@@ -403,7 +404,7 @@ int includeIntegrity (char * fileName)
 	of_result = openFile(fileName);
 	int file_inode_n = namei(fileName);
 
-	if (of_result == -1 || namei == -1) return -1; // File doesnt exist
+	if (of_result == -1 || file_inode_n == -1) return -1; // File doesnt exist
 
 	// Put the position on the start of the file and then put it back
 	inode* file_inode = &inodo[file_inode_n];
@@ -412,7 +413,7 @@ int includeIntegrity (char * fileName)
 	file_inode->pos = 0;
 
 	// Read the entire file
-	unsigned char* file_data;
+	unsigned char file_data[file_length];
 	readFile(file_inode_n, file_data, file_length);
 
 	// Calculate and store the CRC
@@ -482,7 +483,7 @@ int createLn(char *fileName, char *linkName)
 		of_result = openFile(SYMLINK_FILE);
 	}
 
-	char* links_buffer[MAX_FILE_SIZE];
+	char links_buffer[MAX_FILE_SIZE];
 	if (readFile(of_result, links_buffer, MAX_FILE_SIZE) == -1) return -2;
 
 	int end_file_pointer = strlen(links_buffer);
@@ -525,7 +526,7 @@ int removeLn(char *linkName)
 		return -1;
 	}
 
-	char* links_buffer[MAX_FILE_SIZE];
+	char links_buffer[MAX_FILE_SIZE];
 	if (readFile(of_result, links_buffer, MAX_FILE_SIZE) == -1) return -2;
 
 	int end_file_pointer = strlen(links_buffer);
@@ -594,8 +595,11 @@ int removeLn(char *linkName)
 int syncFS(void){
 
 	char a[BLOCK_SIZE];
+	memset(a, 0x0, BLOCK_SIZE);
 	char b[BLOCK_SIZE];
+	memset(a, 0x0, BLOCK_SIZE);
 	char c[BLOCK_SIZE];
+	memset(a, 0x0, BLOCK_SIZE);
 	//We write the superblock
 	char buffer[BLOCK_SIZE];
 	memcpy(buffer, &(sbk[0]), sizeof(sbk[0]));

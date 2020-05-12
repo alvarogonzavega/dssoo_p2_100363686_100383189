@@ -24,6 +24,7 @@ static inline void bitmap_setbit(char *bitmap_, int i_, int val_) {
 #define MAX_NAME_LENGTH 32
 #define MIN_SIZE_SYS_FILES 460 * 1024
 #define MAX_SIZE_SYS_FILES 600 * 1024
+#define SYMLINK_FILE "symlinkFile.sys"
 
 typedef struct{
 
@@ -40,7 +41,7 @@ typedef struct{
   unsigned int block[MAX_SIZE_FILE/BLOCK_SIZE];
   unsigned int state;
   unsigned int pos;
-  unsigned int crc;
+  uint32_t crc;
   unsigned char hasIntegrity;
   char name[MAX_NAME_LENGTH];
 
