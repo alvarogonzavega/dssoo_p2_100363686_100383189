@@ -1190,5 +1190,5 @@ int main()
 	free(buffer);
 	free(readBuffer);
 	
-	return ret;
+	return 0;
 }
