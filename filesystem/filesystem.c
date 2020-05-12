@@ -283,20 +283,22 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 			}
 
 			if(i==blockF){
-
+				
+				memset(wbf, 0, BLOCK_SIZE);
 				bread(disk, inodo[fileDescriptor].block[i], wbf); //We read the total bytes specified
-				memmove(wbf+total, (char *) buffer+inodo[fileDescriptor].pos, p); //We move the pointer
+				memmove(wbf, (char *) buffer, p); //We move the pointer
 				bwrite(disk, inodo[fileDescriptor].block[i], wbf);
 				total += p;
-				inodo[fileDescriptor].size += total; //We update the size of the file
+				inodo[fileDescriptor].size += p; //We update the size of the file
 
 			}else{
-
+				
+				memset(wbf, 0, BLOCK_SIZE);
 				bread(disk, inodo[fileDescriptor].block[i], wbf); //We read the total bytes specified
-				memmove(wbf+total, (char *) buffer+inodo[fileDescriptor].pos, BLOCK_SIZE); //We move the pointer
+				memmove(wbf, (char *) buffer, BLOCK_SIZE); //We move the pointer
 				bwrite(disk, inodo[fileDescriptor].block[i], wbf);
 				total += BLOCK_SIZE;
-				inodo[fileDescriptor].size += total; //We update the size of the file
+				inodo[fileDescriptor].size += BLOCK_SIZE; //We update the size of the file
 
 
 			}
