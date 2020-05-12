@@ -567,7 +567,7 @@ int removeLn(char *linkName)
 			strncat(new, "|", 1);
 			strncat(new, amp[j], strlen(tok[j]));
 			strncat(new, "&", 1);
-			strncat(new, amp[j+1], strlen(amp[j+1]);
+			strncat(new, amp[j+1], strlen(amp[j+1]));
 			j+=2;		
 
 		}

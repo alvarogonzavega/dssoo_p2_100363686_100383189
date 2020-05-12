@@ -1094,6 +1094,13 @@ int main()
 	}
 	fprintf(stdout, "%s%s%i%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile (", BUF_SIZE, " bytes) ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
+	// (B) Check integrity of file with no integrity
+	if ( checkFile(FILE_NAME) != -2 ) {
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (no integrity) ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (no integrity) ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
 
 	// (B) Include and check integrity
 	if( includeIntegrity(FILE_NAME) != 0 ) {
@@ -1107,6 +1114,13 @@ int main()
 		return -1;
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (regular) ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+	// (B) Check integrity of unexisting file
+	if ( checkFile("doesnt.exist") != -2 ){
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (doesnt exist) ", ANSI_COLOR_RED, "SUCCESS\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (doesnt exist) ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
 
 	// (A) Go back to the start and read the message in the file
