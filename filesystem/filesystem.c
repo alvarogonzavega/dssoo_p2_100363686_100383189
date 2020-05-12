@@ -272,7 +272,7 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 
 		int total=0;
 		int p=end-start; while(p>BLOCK_SIZE){ p-=BLOCK_SIZE; }
-		for(int i=blockI; i<=blockF; i++){
+		for(int i=blockI; i<blockF; i++){
 
 			if(i>blockI){
 
@@ -282,7 +282,7 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 
 			}
 
-			if(i==blockF){
+			if(i==blockF-1){
 				
 				memset(wbf, 0, BLOCK_SIZE);
 				bread(disk, inodo[fileDescriptor].block[i], wbf); //We read the total bytes specified
