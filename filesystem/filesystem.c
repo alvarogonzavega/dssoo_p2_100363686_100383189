@@ -356,8 +356,7 @@ int lseekFile(int fileDescriptor, long offset, int whence)
 
 int checkFile (char * fileName)
 {
-	// TODO if file is open and modified, it will always detect corruption.
-	// TODO check first if the file has integrity
+	// If file is open and has been modified, it will always detect corruption.
 	// To get the contents of the file, we choosed to use readFile
 
 	// If the file isnt opened, it opens it and closes it at the end
@@ -369,6 +368,10 @@ int checkFile (char * fileName)
 
 	// Put the position on the start of the file and then put it back
 	inode* file_inode = &inodo[file_inode_n];
+
+	// Check first if the file has integrity
+	if (file_inode->hasIntegrity == 0) return -2;
+
 	unsigned int orig_inode_pos = file_inode->pos;
 	unsigned int file_length = file_inode->size;
 	file_inode->pos = 0;
