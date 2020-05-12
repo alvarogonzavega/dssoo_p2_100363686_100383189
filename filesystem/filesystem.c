@@ -192,7 +192,7 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 	//If the starting point is at the end or there is no bytes to read, we return 0
 	if(start == inodo[fileDescriptor].size || numBytes == 0) return 0;
 	if(blockActual == blockF){ //Only one block to read
-		
+
 		//If the buffer wants to read over the size of the file we need to put the end to size
 		if(end>inodo[fileDescriptor].size) end = inodo[fileDescriptor].size;
 		//Total of bytes to read
@@ -283,7 +283,7 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 			}
 
 			if(i==blockF-1){
-				
+
 				memset(wbf, 0, BLOCK_SIZE);
 				bread(disk, inodo[fileDescriptor].block[i], wbf); //We read the total bytes specified
 				memmove(wbf, (char *) buffer, p); //We move the pointer
@@ -292,7 +292,7 @@ int writeFile(int fileDescriptor, void *buffer, int numBytes)
 				inodo[fileDescriptor].size += p; //We update the size of the file
 
 			}else{
-				
+
 				memset(wbf, 0, BLOCK_SIZE);
 				bread(disk, inodo[fileDescriptor].block[i], wbf); //We read the total bytes specified
 				memmove(wbf, (char *) buffer, BLOCK_SIZE); //We move the pointer
@@ -447,7 +447,7 @@ int openFileIntegrity(char *fileName)
 	int of_result = openFile(fileName);
 	if ( of_result == -1 ) return -1; // File doesnt exist
 	else if (of_result == -2 ) return -3; // Other open error (file is already open)
-	
+
     return of_result;
 }
 
@@ -472,12 +472,12 @@ int closeFileIntegrity(int fileDescriptor)
 int createLn(char *fileName, char *linkName)
 {
 	// The symbolic links will be stored in a specific file named "symlinkFile.sys"
-	
+
 	// Check if the file exists first
 	if ( namei(fileName) == -1 ) return -1;
-    
+
 	int of_result = openFile(SYMLINK_FILE);
-	
+
 	if (of_result == -2) ; // The file is probably open already (do nothing)
 	else if (of_result == -1) // If SYMLINK file doesnt exist, create it
 	{
@@ -487,20 +487,20 @@ int createLn(char *fileName, char *linkName)
 
 	char links_buffer[MAX_FILE_SIZE];
 	if (readFile(of_result, links_buffer, MAX_FILE_SIZE) == -1) return -2;
-	
+
 	int end_file_pointer = strlen(links_buffer);
 
 	// If it doesnt fit in the file, return error
-	if ( (end_file_pointer + strlen(linkName) + 2) >= MAX_SIZE_FILE ) { 
+	if ( (end_file_pointer + strlen(linkName) + 2) >= MAX_SIZE_FILE ) {
 		return -2;
 	}
-	
+
 	// Concat the new symbolic link in the buffer (with specific format)
 	strncat(links_buffer, "|", 1);
 	strncat(links_buffer, fileName, strlen(fileName));
 	strncat(links_buffer, "&", 1);
 	strncat(links_buffer, linkName, strlen(linkName));
-	
+
 	// Write the buffer in the file and close it
 	lseekFile(of_result, 0, FS_SEEK_BEGIN);
 	if (writeFile(of_result, links_buffer, strlen(links_buffer)) == -1) return -2;
@@ -521,72 +521,63 @@ int removeLn(char *linkName)
 	int link_length = strlen(linkName);
 
 	int of_result = openFile(SYMLINK_FILE);
-	
+
 	if (of_result == -2) ;
 	else if (of_result == -1) // If SYMLINK file doesnt exist, the link doesnt exist
 	{
 		return -1;
 	}
 
-	char links_buffer[MAX_FILE_SIZE];
+	char *links_buffer=malloc(MAX_SIZE_FILE);
+	lseekFile(of_result, 0, FS_SEEK_BEGIN);
 	if (readFile(of_result, links_buffer, MAX_FILE_SIZE) == -1) return -2;
+	char ** tok = malloc(MAX_SIZE_FILE);
+	char ** amp = malloc(MAX_SIZE_FILE);
+	int i=0;
+	int k=0;
+	const char * pipe="|";
+	const char * ampersand="&";
+	while((tok[i] = strtok_r(links_buffer, pipe, &links_buffer))){
 
-	int end_file_pointer = strlen(links_buffer);
-	int buffer_pointer = 0;
-	int pointer_to_entry = 1;
-	int pointer_to_linkname = -1;
-	int found = 0;
-	
-	// Search through the file to find the link
-	while (buffer_pointer < end_file_pointer && !found)
-	{
-		// Find next character delimitator '&' (start of linkname)
-		while(links_buffer[buffer_pointer] != '&' && buffer_pointer < end_file_pointer)
-		{
-			++buffer_pointer;
-		}
-		if (buffer_pointer == end_file_pointer) break;
-		++buffer_pointer;
-		pointer_to_linkname = buffer_pointer; // Point to the linkname
+		//We update the position
+		i++;
 
+	}
+	for(int j=0; j<i; j++){
 
-		// Match the name or go to the next delimitator character
-		found = 1;
-		for(int local=0; local < link_length && links_buffer[buffer_pointer] != '|' && found; local++)
-		{
-			if (links_buffer[buffer_pointer] != linkName[local]) found = 0;
-			++buffer_pointer;
+		while((amp[k] = strtok_r(tok[j], ampersand, &tok[j]))){
+
+			if(strcmp(amp[k], linkName)==0){
+				amp[k-1]="";
+					k++;
+				 break;
+			 }
+			k++;
+
 		}
 
-		// If not found, continue until the next character delimitator | (start of entry) or end of file
-		if (!found)
-		{
-			while(links_buffer[buffer_pointer] != '|' && buffer_pointer < end_file_pointer)
-			{
-				++buffer_pointer;
-			}
-			++buffer_pointer;
-			pointer_to_entry = buffer_pointer;
+
+
+	}
+	char * new = malloc(MAX_SIZE_FILE);
+	for(int j=0; j<k; j++){
+
+		if(strcmp(amp[j], "")!=0){
+
+			strncat(new, "|", 1);
+			strncat(new, amp[j], strlen(tok[j]));
+			strncat(new, "&", 1);
+			strncat(new, amp[j], strlen(amp[j])
+
 		}
+
 	}
 
-	if (found == 0) return -1;
-
-	// Cut the buffer
-	int begin = pointer_to_entry-1;
-	int len = (pointer_to_linkname - (pointer_to_entry-1)) + link_length;
-	int l = strlen(links_buffer);
-
-	if (begin + len > l) len = l - begin;
-	memmove(links_buffer + begin, links_buffer + begin + len, l - len + 1);
-
-
-	// Write the buffer in the file and close it
+	memset(SYMLINK_FILE, 0x0, strlen(links_buffer));
 	lseekFile(of_result, 0, FS_SEEK_BEGIN);
-	if (writeFile(of_result, links_buffer, strlen(links_buffer)) == -1) return -2;
+	if (writeFile(of_result, new, link_length) == -1) return -2;
 
 	closeFile(of_result);
-
 	return 0;
 }
 
