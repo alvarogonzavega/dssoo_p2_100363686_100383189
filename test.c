@@ -933,7 +933,7 @@ int main()
 
 
 	///////
-	/*
+	
 	ret = mkFS(460 * 1024);
 	if (ret != 0)
 	{
@@ -974,8 +974,7 @@ int main()
 
 	///////
 
-	char buffer[50];
-	for(int i=0; i<50; i++) buffer[i] = i;
+	char buffer[50]="12345678901234567890123456789012345678901234567890";
 	ret = writeFile(0, buffer, 15);
 	if (ret < 0)
 	{
@@ -983,6 +982,7 @@ int main()
 		return -1;
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+	fprintf(stdout, "%s%s%s", "Buffer de escritura: ", buffer, "\n");
 
 	///////
 
@@ -996,6 +996,17 @@ int main()
 
 	///////
 
+	ret = lseekFile(0, 2, FS_SEEK_CUR);
+	if (ret != 0)
+	{
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST lseekFile ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST lseekFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+	///////
+
+	
 	ret = readFile(0, buffer, 15);
 	if (ret < 0)
 	{
@@ -1003,6 +1014,7 @@ int main()
 		return -1;
 	}
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST readFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+	fprintf(stdout, "%s%s%s", "Buffer de lectura: ", buffer, "\n");
 
 	///////
 
@@ -1037,5 +1049,5 @@ int main()
 	///////
 
 	return 0;
-*/
+
 }
