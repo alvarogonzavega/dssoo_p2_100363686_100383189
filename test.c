@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "filesystem/filesystem.h"
+#include "stdlib.h"
 
 
 // Color definitions for asserts
@@ -27,7 +28,7 @@
 
 int main()
 {
-	int ret;
+	//int ret;
 	//First test: deviceSize out of range
 	/*
 	ret=mkFS(1);
@@ -1123,7 +1124,7 @@ int main()
 
 		return -1;
 	}
-	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (check msg changes) ", ANSI_COLOR_GREEN, "SUCCEDED\n", ANSI_COLOR_RESET);
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST readFile (check msg changes) ", ANSI_COLOR_GREEN, "SUCCEDED\n", ANSI_COLOR_RESET);
 
 
 	printf("FILE: %s\n", readBuffer);
@@ -1166,19 +1167,23 @@ int main()
 
 	// (C) Create symbolic link and check if it exist
 	if ( createLn(FILE_NAME, "test.txt") < 0 ) {
-		printf("gotere\n");
 		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
 		
 		return -1;
 	}
-	printf("gotere\n");
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 	of_result = openFile("symlinkFile.sys");
+	lseekFile(of_result, 0, FS_SEEK_BEGIN);
 	char auxBuffer[100];
 	readFile(of_result, auxBuffer, 100);
 	closeFile(of_result);
 	printf("Existing links (should be one): %s\n", auxBuffer);
-
+	if ( removeLn("test.txt") < 0 ) {
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeLn ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST removeLn ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 
 	unmountFS();
 
