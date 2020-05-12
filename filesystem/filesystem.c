@@ -32,7 +32,6 @@ int mkFS(long deviceSize)
 {
 
 	//We see if the size is between the allowed values
-	print(deviceSize);
 	if(deviceSize > MAX_SIZE_SYS_FILES || deviceSize < MIN_SIZE_SYS_FILES) return -1;
 	//We stablish the number of blocks, inodes, the size and the number of blocks of data
 	sbk[0].num_Blocks = deviceSize / BLOCK_SIZE;
