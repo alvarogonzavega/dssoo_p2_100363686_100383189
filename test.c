@@ -569,7 +569,7 @@ int main()
 	return 0;
 	*/
 	//Fourteen test: Writing over the limit of bytes allowed
-	/*
+	
 	ret = mkFS(460 * 1024);
 	if (ret != 0)
 	{
@@ -618,7 +618,7 @@ int main()
 	int k=0;
 	for(int i=0; i<10300; i++){
 		 if(i==9) k=0;
-		 buffer[i]=k;
+		 buffer[i]='k';
 		 k++;
 	 }
 	ret = writeFile(0, buffer, 10300);
@@ -630,7 +630,7 @@ int main()
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 	fprintf(stdout, "%d%s", ret, "\n");
 	return 0;
-	*/
+	
 	//Fifteen test: Reading an empty file
 	/*
 	ret = mkFS(460 * 1024);
@@ -933,7 +933,7 @@ int main()
 
 
 	///////
-	
+	/*
 	ret = mkFS(460 * 1024);
 	if (ret != 0)
 	{
@@ -1049,5 +1049,5 @@ int main()
 	///////
 
 	return 0;
-
+	*/
 }
