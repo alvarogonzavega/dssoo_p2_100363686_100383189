@@ -189,10 +189,10 @@ int readFile(int fileDescriptor, void *buffer, int numBytes)
 	int blockF = end/BLOCK_SIZE; //The final block of lecture
 	while(blockF>5){blockF--;}
 	int total=0;
+	//If the starting point is at the end or there is no bytes to read, we return 0
+	if(start == inodo[fileDescriptor].size || numBytes == 0) return 0;
 	if(blockActual == blockF){ //Only one block to read
-
-		//If the starting point is at the end or there is no bytes to read, we return 0
-		if(start == inodo[fileDescriptor].size || numBytes == 0) return 0;
+		
 		//If the buffer wants to read over the size of the file we need to put the end to size
 		if(end>inodo[fileDescriptor].size) end = inodo[fileDescriptor].size;
 		//Total of bytes to read
