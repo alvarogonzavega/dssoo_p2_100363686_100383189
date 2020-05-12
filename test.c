@@ -569,7 +569,7 @@ int main()
 	return 0;
 	*/
 	//Fourteen test: Writing over the limit of bytes allowed
-	
+	/*
 	ret = mkFS(460 * 1024);
 	if (ret != 0)
 	{
@@ -630,7 +630,7 @@ int main()
 	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
 	fprintf(stdout, "%d%s", ret, "\n");
 	return 0;
-	
+	*/
 	//Fifteen test: Reading an empty file
 	/*
 	ret = mkFS(460 * 1024);
@@ -1050,4 +1050,140 @@ int main()
 
 	return 0;
 	*/
+
+	/* 
+	 * Segmento de código de pruebas general para probar:
+	 * (A) Escritura en disco, y correcta lectura de un mensaje de menos y más de 1 bloque de tamaño
+	 * (B) Comprobación de todas las funciones de integridad
+	 * (C) Comprobación de creación y borrado de enlaces simbólicos
+	 * 
+	 * Otras funcionalidades básicas a usar ya han sido probadas y no se comprueban aquí
+	 * 
+	 * openFileIntegrity y closeFileIntegrity usan las funciones checkFile y includeIntegrity
+	 * respectivamente, por lo que si funcionan las 2 posteriores, se asume que las 2 primeras
+	 * harán esas correspondientes funcionalidades correctamente.
+	 */
+	
+	const int BUF_SIZE = 2047;	// Cambiar valor para las diferentes pruebas (10, 300 y 3000)
+	char* FILE_NAME = "/testABC.txt";
+
+	// Create and mount FS
+	mkFS(460 * 1024);
+	mountFS();
+
+	// Create and open the file
+	createFile(FILE_NAME);
+
+	int of_result = openFile(FILE_NAME);
+	lseekFile(of_result, 0, FS_SEEK_BEGIN);
+
+
+	// (A) Create a message and write it in the file
+	char cicl[6] = "aAbBcC";
+	char* buffer = malloc(BUF_SIZE * sizeof(char));
+	for (int i = 0; i < BUF_SIZE; ++i)
+	{
+		buffer[i] = cicl[i%6];
+	}buffer[BUF_SIZE-1] = '\0';
+	printf("gud3\n");
+	if ( writeFile(of_result, buffer, BUF_SIZE) < 0 )
+	{
+		fprintf(stdout, "%s%s%i%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile (", BUF_SIZE, " bytes) ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%i%s%s%s%s", ANSI_COLOR_BLUE, "TEST writeFile (", BUF_SIZE, " bytes) ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+
+	// (B) Include and check integrity
+	if( includeIntegrity(FILE_NAME) != 0 ) {
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST includeIntegrity ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST includeIntegrity ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+	if ( checkFile(FILE_NAME) != 0 ) {
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (regular) ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (regular) ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+
+	// (A) Go back to the start and read the message in the file
+	lseekFile(of_result, 0, FS_SEEK_BEGIN);
+	
+	char* readBuffer = malloc(BUF_SIZE * sizeof(char));
+	for (int i = 0; i < BUF_SIZE; ++i)
+	{
+		readBuffer[i] = '0';
+	} readBuffer[BUF_SIZE-1] = '\0';
+	readFile(of_result, readBuffer, BUF_SIZE);
+	
+	if (strcmp(buffer, readBuffer) != 0) {
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST readFile (check msg changes) ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (check msg changes) ", ANSI_COLOR_GREEN, "SUCCEDED\n", ANSI_COLOR_RESET);
+
+
+	printf("FILE: %s\n", readBuffer);
+
+
+	// (B) File gets modified and should find corruption now
+	lseekFile(of_result, 0, FS_SEEK_BEGIN);
+	writeFile(of_result, "prueba00000000000000000000000", 30);
+	int cf_res = -5;
+	if ((cf_res = checkFile(FILE_NAME)) != -1) {
+		// Case it didnt find the corruption
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (detect corrupted file) ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		printf("Code %i\n", cf_res);
+
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST checkFile (detect corrupted file) ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+
+	// (B) Close the file with integrity
+	if ( closeFileIntegrity(of_result) == -1 ) {
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFileIntegrity ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST closeFileIntegrity ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+
+	// (B) Open it again with integrity (should not detect corruption now)
+	if ( (of_result = openFileIntegrity(FILE_NAME)) < 0 )
+	{
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFileIntegrity ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		
+		return -1;
+	}
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST openFileIntegrity ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+
+	closeFileIntegrity(of_result);
+
+
+	// (C) Create symbolic link and check if it exist
+	if ( createLn(FILE_NAME, "test.txt") < 0 ) {
+		printf("gotere\n");
+		fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_RED, "FAILED\n", ANSI_COLOR_RESET);
+		
+		return -1;
+	}
+	printf("gotere\n");
+	fprintf(stdout, "%s%s%s%s%s", ANSI_COLOR_BLUE, "TEST createLn ", ANSI_COLOR_GREEN, "SUCCESS\n", ANSI_COLOR_RESET);
+	of_result = openFile("symlinkFile.sys");
+	char auxBuffer[100];
+	readFile(of_result, auxBuffer, 100);
+	closeFile(of_result);
+	printf("Existing links (should be one): %s\n", auxBuffer);
+
+
+	unmountFS();
+
+	free(buffer);
+	free(readBuffer);
+	
+	return ret;
 }

@@ -487,18 +487,18 @@ int createLn(char *fileName, char *linkName)
 
 	char links_buffer[MAX_FILE_SIZE];
 	if (readFile(of_result, links_buffer, MAX_FILE_SIZE) == -1) return -2;
-
+	
 	int end_file_pointer = strlen(links_buffer);
 
 	// If it doesnt fit in the file, return error
 	if ( (end_file_pointer + strlen(linkName) + 2) >= MAX_SIZE_FILE ) { 
 		return -2;
 	}
-
+	
 	// Concat the new symbolic link in the buffer (with specific format)
-	strncat(links_buffer, (char*)28, 1);
+	strncat(links_buffer, "|", 1);
 	strncat(links_buffer, fileName, strlen(fileName));
-	strncat(links_buffer, (char*)29, 1);
+	strncat(links_buffer, "&", 1);
 	strncat(links_buffer, linkName, strlen(linkName));
 	
 	// Write the buffer in the file and close it
@@ -540,8 +540,8 @@ int removeLn(char *linkName)
 	// Search through the file to find the link
 	while (buffer_pointer < end_file_pointer && !found)
 	{
-		// Find next character delimitator 29 (start of linkname)
-		while(links_buffer[buffer_pointer] != 29 && buffer_pointer < end_file_pointer)
+		// Find next character delimitator '&' (start of linkname)
+		while(links_buffer[buffer_pointer] != '&' && buffer_pointer < end_file_pointer)
 		{
 			++buffer_pointer;
 		}
@@ -552,16 +552,16 @@ int removeLn(char *linkName)
 
 		// Match the name or go to the next delimitator character
 		found = 1;
-		for(int local=0; local < link_length && links_buffer[buffer_pointer] != 28 && found; local++)
+		for(int local=0; local < link_length && links_buffer[buffer_pointer] != '|' && found; local++)
 		{
 			if (links_buffer[buffer_pointer] != linkName[local]) found = 0;
 			++buffer_pointer;
 		}
 
-		// If not found, continue until the next character delimitator 28 (start of entry) or end of file
+		// If not found, continue until the next character delimitator | (start of entry) or end of file
 		if (!found)
 		{
-			while(links_buffer[buffer_pointer] != 28 && buffer_pointer < end_file_pointer)
+			while(links_buffer[buffer_pointer] != '|' && buffer_pointer < end_file_pointer)
 			{
 				++buffer_pointer;
 			}
